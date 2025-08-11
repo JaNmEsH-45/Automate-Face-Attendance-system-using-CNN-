@@ -1,0 +1,95 @@
+import face_recognition
+import cv2
+import numpy as np
+import openpyxl
+from datetime import datetime
+
+# Load images and their encodings
+ratan_tata_image = face_recognition.load_image_file("photos/ratan_tata.jpg")
+ratan_tata_encoding = face_recognition.face_encodings(ratan_tata_image)[0]
+
+tesla_image = face_recognition.load_image_file("photos/tesla_image.jpg")
+tesla_encoding = face_recognition.face_encodings(tesla_image)[0]
+
+elon_musk_image = face_recognition.load_image_file("photos/elon_musk.jpeg")
+elon_musk_encoding = face_recognition.face_encodings(elon_musk_image)[0]
+
+sundar_pichai_image = face_recognition.load_image_file("photos/sundar_pichai.jpg")
+sundar_pichai_encoding = face_recognition.face_encodings(sundar_pichai_image)[0]
+
+# List of known face encodings and names
+known_face_encodings = [
+    ratan_tata_encoding,
+    tesla_encoding,
+    elon_musk_encoding,
+    sundar_pichai_encoding
+]
+
+known_faces_names = [
+    "ratan tata",
+    "tesla",
+    "elon musk",
+    "sundar pichai"
+]
+
+# Create Excel workbook and worksheet
+wb = openpyxl.Workbook()
+ws = wb.active
+ws.append(["Name", "Time"])
+
+# Open video capture
+video_capture = cv2.VideoCapture(0)
+
+while True:
+    # Capture frame-by-frame
+    ret, frame = video_capture.read()
+
+    # Convert the image from BGR color (which OpenCV uses) to RGB color
+    try:
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    except Exception as e:
+        print("Error converting image to RGB:", e)
+        continue  # Skip this frame and continue with the next one
+    
+    # Detect faces
+    face_locations = face_recognition.face_locations(rgb_frame)
+    
+    # If faces are detected, proceed
+    if face_locations:
+        # Get face encodings
+        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+        
+        # Compare each detected face with known faces
+        for face_encoding in face_encodings:
+            # Compare face with known encodings
+            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+            name = "Unknown"
+            
+            # Find the best match
+            face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+            best_match_index = np.argmin(face_distances)
+            
+            # If a match is found, assign the corresponding name
+            if matches[best_match_index]:
+                name = known_faces_names[best_match_index]
+            
+            # Write data to Excel worksheet for known faces
+            if name in known_faces_names:
+                current_time = datetime.now().strftime("%H-%M-%S")
+                ws.append([name, current_time])
+                
+                print("Detected:", name, "at", current_time)
+
+    # Display the resulting image
+    cv2.imshow('Video', frame)
+    
+    # If 'q' is pressed, exit loop
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Save the workbook to a file
+wb.save("attendance.xlsx")
+
+# Release video capture
+video_capture.release()
+cv2.destroyAllWindows()
