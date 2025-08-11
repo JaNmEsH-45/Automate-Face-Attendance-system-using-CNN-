@@ -1,0 +1,2 @@
+# Automate-Face-Attendance-system-using-CNN-
+Automated Face Attendance System  Designed and developed a Python-based system to detect, recognize, and log student attendance using OpenCV, deep learning, and SQLite.  Created a backend database for CSV storage, real-time attendance marking, and image verification.  Reduced manual intervention and improved data accuracy.
